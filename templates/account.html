@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <title>CM3148 Prototype</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   </head>
 
   <body>
@@ -42,6 +43,8 @@
                     <label for="confirm_password">Confirm Password:</label>
                     <input type="password" id="confirm_password" name="confirm_password" required>
                     <br>
+                    <div class="g-recaptcha" data-sitekey="6LdniRArAAAAAE-a4ttc4IbNlVgOatXxFbgJ5DRS"></div>
+                    <br>
                     <input type="submit" value="Reset Password">
                 </form>
             </td>
@@ -50,6 +53,8 @@
                 <form method="POST" action="{{ url_for('delete_account') }}">
                     <label for="password">Confirm Your Password:</label>
                     <input type="password" id="password" name="password" required>
+                    <br>
+                    <div class="g-recaptcha" data-sitekey="6LdniRArAAAAAE-a4ttc4IbNlVgOatXxFbgJ5DRS"></div>
                     <br>
                     <input type="submit" value="Delete Account">
                 </form>

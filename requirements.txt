@@ -3,3 +3,4 @@ Flask-PyMongo==2.3.0
 Flask-Bcrypt==1.0.1
 Flask_Session==0.4.0
 zxcvbn==4.5.0
+pyopenssl==25.0.0
