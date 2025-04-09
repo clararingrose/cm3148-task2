@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>CM3148 Prototype</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+
+  <body>
+    <header>
+      <a href="{{ url_for('index') }}"><h1>CM3148 Login Authentication System</h1></a>
+      <hr>
+    </header>
+    <h2>Register</h2>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class=flashes>
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <table>
+        <tr>
+            <td>
+                <form method="POST" action="{{ url_for('register') }}">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" required>
+                    <br>
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" required>
+                    <br>
+                    <input type="submit" value="register">
+                </form>
+            </td>
+        </tr>
+    </table>
+
+    <footer>
+      <hr>
+      <p>Copyright &copy; 2023 CM3148</p>
+    </footer>
+
+  </body>
+
+</html>

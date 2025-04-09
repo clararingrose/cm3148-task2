@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>CM3148 Prototype</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+
+  <body>
+    <header>
+      <a href="{{ url_for('index') }}"><h1>CM3148 Login Authentication System</h1></a>
+      <hr>
+    </header>
+
+    <h2>{{ message }}</h2>
+    <table>
+      {% if session['username'] %}
+        <tr>
+          <th>View Your Account</th>
+          <th>or</th>
+          <th>Log Out</th>
+        </tr>
+        <tr>
+          <td><a href="{{ url_for('account') }}"><button class="right">Account</button></a></td>
+          <td></td>
+          <td><a href="{{ url_for('logout') }}"><button class="right">Log Out</button></a></td>
+        </tr>
+      {% else %}
+        <tr>
+            <th>Login</th>
+            <th>or</th>
+            <th>Register</th>
+        </tr>
+        <tr>
+            <td><a href="{{ url_for('login') }}"><button>Login</button></a></td>
+            <td></td>
+            <td><a href="{{ url_for('register') }}"><button>Register</button></a></td>
+        </tr>
+      {% endif %}
+    </table>
+    
+    <footer>
+      <hr>
+      <p>Copyright &copy; 2023 CM3148</p>
+    </footer>
+
+  </body>
+
+</html>
