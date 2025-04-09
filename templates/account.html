@@ -47,13 +47,19 @@
             </td>
             <td></td>
             <td>
+                <form method="POST" action="{{ url_for('delete_account') }}">
+                    <label for="password">Confirm Your Password:</label>
+                    <input type="password" id="password" name="password" required>
+                    <br>
+                    <input type="submit" value="Delete Account">
+                </form>
             </td>
         </tr>
     </table>
 
     <footer>
       <hr>
-      <p>Copyright &copy; 2023 CM3148</p>
+      <p>Copyright &copy; 2025 Clara Ringrose</p>
     </footer>
 
   </body>

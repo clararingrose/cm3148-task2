@@ -53,12 +53,16 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        confirm_password = request.form['confirm_password']
 
         password_strength = zxcvbn(password, user_inputs=[username])
 
         # Check if the username already exists
         if users.find_one({'username': username}):
             flash('Username already exists. Choose a different one.', 'error')
+        # Check if passwords match
+        elif password != confirm_password:
+            flash('Passwords do not match. Please try again.', 'error')
         # Check password strength
         elif password_strength['score'] < 3:
             flash('Password is too weak. Please choose a stronger password.', 'error')
@@ -107,9 +111,22 @@ def reset_password():
             flash('Password reset successful.', 'success')
     return render_template("account.html")
 
-# @app.route("/delete-account", methods=['POST'])
-# def delete_account():
+@app.route("/delete-account", methods=['POST'])
+def delete_account():
+    if request.method == 'POST':
+        user = users.find_one({'username': session['username']})
+        password = request.form['password']
+        hashed_password = user['password']
+        is_valid = bcrypt.check_password_hash(hashed_password, password)
 
+        if is_valid:
+            users.delete_one({'username': session['username']})
+            session["username"] = None
+            flash('Account deleted successfully.', 'success')
+            return redirect("/")
+        else:
+            flash('Invalid password. Please try again.', 'error')
+    return render_template("account.html")
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8080, debug=True)
