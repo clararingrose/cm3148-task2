@@ -27,13 +27,13 @@
 
     <table>
       <tr>
-        <th>Reset Your Password</th>
+        <th>Change Your Password</th>
         <th>or</th>
         <th>Delete Your Account</th>
       </tr>
         <tr>
             <td>
-                <form method="POST" action="{{ url_for('reset_password') }}">
+                <form method="POST" action="{{ url_for('change') }}">
                     <label for="old_password">Old Password</label>
                     <input type="password" id="old_password" name="old_password" required>
                     <br>
@@ -45,7 +45,7 @@
                     <br>
                     <div class="g-recaptcha" data-sitekey="6LdniRArAAAAAE-a4ttc4IbNlVgOatXxFbgJ5DRS"></div>
                     <br>
-                    <input type="submit" value="Reset Password">
+                    <input type="submit" value="Change Password">
                 </form>
             </td>
             <td></td>
