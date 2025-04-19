@@ -12,7 +12,7 @@
       <a href="{{ url_for('index') }}"><h1>CM3148 Login Authentication System</h1></a>
       <hr>
     </header>
-    <h2>Login</h2>
+    <h2>Verify Email</h2>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -27,17 +27,19 @@
     <table>
         <tr>
             <td>
-                <form method="POST" action="{{ url_for('login') }}">
-                    <label for="username">Username:</label>
-                    <input type="text" id="username" name="username" required autocomplete="off">
-                    <br>
-                    <label for="password">Password:</label>
-                    <input type="password" id="password" name="password" required autocomplete="off">
-                    <br>
-                    <input type="submit" value="login">
+                <form method="POST" action="{{ url_for('verify_email') }}">
+                    <label for="code">Enter your email verification code:</label>
+                    <input type="text" id="code" name="code" required autocomplete="off">
+                    <button type="submit">Verify</button>
                 </form>
-                <br>
-                <a href="{{ url_for('forgot_password') }}"><button>Forgot Password</button></a>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <form method="POST" action="{{ url_for('resend_verification_code') }}">
+                    <div class="g-recaptcha" data-sitekey="6LdniRArAAAAAE-a4ttc4IbNlVgOatXxFbgJ5DRS"></div>
+                    <button type="submit">Resend Verification Email</button>
+                </form>
             </td>
         </tr>
     </table>

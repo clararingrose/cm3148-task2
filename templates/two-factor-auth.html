@@ -12,7 +12,7 @@
       <a href="{{ url_for('index') }}"><h1>CM3148 Login Authentication System</h1></a>
       <hr>
     </header>
-    <h2>Login</h2>
+    <h2>Set Up Two-Factor Authentication</h2>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -27,17 +27,11 @@
     <table>
         <tr>
             <td>
-                <form method="POST" action="{{ url_for('login') }}">
-                    <label for="username">Username:</label>
-                    <input type="text" id="username" name="username" required autocomplete="off">
-                    <br>
-                    <label for="password">Password:</label>
-                    <input type="password" id="password" name="password" required autocomplete="off">
-                    <br>
-                    <input type="submit" value="login">
-                </form>
-                <br>
-                <a href="{{ url_for('forgot_password') }}"><button>Forgot Password</button></a>
+                <a href={{link}}>{{link}}</a>
+                <br><br>
+                Follow the link, or in your authenticator app, enter the key manually.
+                <br><br>
+                Key: {{key}}
             </td>
         </tr>
     </table>
