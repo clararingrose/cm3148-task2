@@ -85,7 +85,7 @@ def register():
         password = request.form['password']
         confirm_password = request.form['confirm_password']
 
-        password_strength = zxcvbn(password, user_inputs=[username])
+        password_strength = zxcvbn(password, user_inputs=[username, email])
 
         # Check if the username or email already exists
         if users.find_one({'username': username}) or users.find_one({'email': email}):
@@ -95,7 +95,7 @@ def register():
             flash('Passwords do not match. Please try again.', 'error')
         # Check password strength
         elif password_strength['score'] < 3:
-            flash(password_strength['suggestions'], 'error')
+            flash("Password to weak:", password_strength['feedback']['suggestions'], 'error')
         # Save user details and send verification email
         else:
             # Save user details to the database
@@ -205,7 +205,7 @@ def change_password():
             flash('Invalid old password or new passwords do not match.', 'error')
         # Check strength of new password
         elif password_strength['score'] < 3:
-            flash(password_strength['suggestions'], 'error')
+            flash("Password too weak:", password_strength['feedback']['suggestions'], 'error')
         # Check if old password is the same as new password
         elif old_password == new_password:
             flash('New password cannot be the same as the old password.', 'error')
@@ -275,7 +275,7 @@ def reset_password():
             flash('Passwords do not match. Please try again.', 'error')
         # Check password strength
         elif password_strength['score'] < 3:
-            flash(password_strength['suggestions'], 'error')
+            flash("Password to weak:", password_strength['feedback']['suggestions'], 'error')
         else:
             hashed_new_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
             users.update_one({'reset_token': token}, {'$set': {'password': hashed_new_password, 'last_password_change': datetime.datetime.now()}, '$unset': {'reset_token': None, 'token_expiry': None}})

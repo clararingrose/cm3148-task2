@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <title>CM3148 Prototype</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    
   </head>
 
   <body>
@@ -36,9 +38,11 @@
                     <br>
                     <label for="password">Password:</label>
                     <input type="password" id="password" name="password" required autocomplete="off">
+                    <button type="button" onmousedown="showPassword('password')" onmouseup="hidePassword('password')">Show Password</button>
                     <br>
                     <label for="confirm_password">Confirm Password:</label>
                     <input type="password" id="confirm_password" name="confirm_password" required autocomplete="off">
+                    <button type="button" onmousedown="showPassword('confirm_password')" onmouseup="hidePassword('confirm_password')">Show Password</button>
                     <br>
                     <input type="submit" value="register">
                 </form>
