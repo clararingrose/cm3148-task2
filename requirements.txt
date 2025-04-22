@@ -4,3 +4,5 @@ Flask-Bcrypt==1.0.1
 Flask_Session==0.4.0
 zxcvbn==4.5.0
 pyopenssl==25.0.0
+pyotp==2.9.0
+Werkzeug==2.2.2
