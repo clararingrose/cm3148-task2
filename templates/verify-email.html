@@ -28,17 +28,19 @@
         <tr>
             <td>
                 <form method="POST" action="{{ url_for('verify_email') }}">
-                    <label for="code">Enter your email verification code:</label>
-                    <input type="text" id="code" name="code" required autocomplete="off">
-                    <button type="submit">Verify</button>
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <label for="code">Enter your email verification code:</label>
+                  <input type="text" id="code" name="code" required autocomplete="off">
+                  <button type="submit">Verify</button>
                 </form>
             </td>
         </tr>
         <tr>
             <td>
                 <form method="POST" action="{{ url_for('resend_verification_code') }}">
-                    <div class="g-recaptcha" data-sitekey="6LdniRArAAAAAE-a4ttc4IbNlVgOatXxFbgJ5DRS"></div>
-                    <button type="submit">Resend Verification Email</button>
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <div class="g-recaptcha" data-sitekey="6LdniRArAAAAAE-a4ttc4IbNlVgOatXxFbgJ5DRS"></div>
+                  <button type="submit">Resend Verification Email</button>
                 </form>
             </td>
         </tr>

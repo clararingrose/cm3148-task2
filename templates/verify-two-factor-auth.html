@@ -28,9 +28,10 @@
         <tr>
             <td>
                 <form method="POST" action="{{ url_for('verify_two_factor_auth') }}">
-                    <label for="code">Enter your OTP code:</label>
-                    <input type="text" id="totp" name="totp" required autocomplete="one-time-code">
-                    <button type="submit">Verify</button>
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <label for="code">Enter your OTP code:</label>
+                  <input type="text" id="totp" name="totp" required autocomplete="one-time-code">
+                  <button type="submit">Verify</button>
             </td>
         </tr>
     </table>

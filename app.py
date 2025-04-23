@@ -4,19 +4,25 @@ from flask_pymongo import PyMongo
 from flask_bcrypt import Bcrypt
 from flask_session import Session
 from flask_limiter import Limiter
+from flask_wtf.csrf import CSRFProtect
 from zxcvbn import zxcvbn
 import pyotp
 import datetime
+from cryptography.fernet import Fernet
+import os
+from dotenv import load_dotenv
+
 
 app = Flask(__name__)
+load_dotenv()
 
 app.config["MONGO_URI"] = "mongodb://localhost:27017/cm3148"
-app.config["MONGO_USERNAME"] = "[YOUR MONGODB USERNAME]"
-app.config["MONGO_PASSWORD"] = "[YOUR MONGODB PASSWORD]"
 mongo = PyMongo(app)
 users = mongo.db.users
 
-app.secret_key = "HbXEVGi4ANN#n*wWbUnw8hTFXE9Gay"
+app.secret_key = os.getenv("SECRET_KEY")
+fernet_key = os.getenv("FERNET_KEY")
+cipher = Fernet(fernet_key)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 app.config['SESSION_COOKIE_SECURE'] = True
@@ -26,8 +32,8 @@ Session(app)
 
 app.config['MAIL_SERVER']='sandbox.smtp.mailtrap.io'
 app.config['MAIL_PORT'] = 2525
-app.config['MAIL_USERNAME'] = '352d3e31dfdc1f'
-app.config['MAIL_PASSWORD'] = 'fa295d1cf087db'
+app.config['MAIL_USERNAME'] = os.getenv("MAILTRAP_USERNAME")
+app.config['MAIL_PASSWORD'] = os.getenv("MAILTRAP_PASSWORD")
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
 mail = Mail(app)
@@ -37,6 +43,7 @@ limiter = Limiter(
     app,
     default_limits=["200 per day", "50 per hour"],
 )
+csrf = CSRFProtect(app)
 
 # Set HSTS header
 @app.after_request
@@ -53,10 +60,16 @@ def index():
     return render_template("index.html", message=message)
 
 @app.route("/login", methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+
+        # Check if username is alphanumeric
+        if not username.isalnum():
+            flash('Username can only contain letters and numbers.', 'error')
+            return render_template("login.html")
 
         # Check if the user exists
         user = users.find_one({'username': str(username)})
@@ -65,15 +78,14 @@ def login():
             return render_template("login.html")
         
         # Check if the user is locked out
-        if user.get('login_attempts') >= 5 and (datetime.datetime.now() - user.get('locked_at')).total_seconds() < 3600:
-            # User is locked out for 1 hour
+        if user.get('login_attempts', 0) >= 6 and (datetime.datetime.now() - user.get('locked_at', datetime.datetime.min)).total_seconds() < 3600:  # User is locked out for 1 hour
             subject = 'Account Locked'
             body = 'Your account has been locked due to too many failed login attempts. Please try again later.'
             send_email(user.get('email'), subject, body)
             flash('Your account is locked for one hour due to too many failed login attempts.', 'error')
             return render_template("login.html")
         # Reset login attempts after 1 hour
-        elif user.get('login_attempts') >= 5:
+        elif user.get('login_attempts', 0) >= 6:
             users.update_one({'username': str(username)}, {'$set': {'login_attempts': 0, 'locked_at': None}})
           
         # Check if the password is correct
@@ -85,6 +97,7 @@ def login():
             users.update_one({'username': str(username)}, {'$set': {'login_attempts': 0, 'locked_at': None}})
             # Check if the user has verified their email
             if not user.get('is_verified'):
+                session.clear()
                 session['username'] = str(username)
                 session.permanent = True
                 flash('Please verify your email before logging in.', 'error')
@@ -94,6 +107,7 @@ def login():
                 session['temp_username'] = str(username)
                 return redirect('/verify-two-factor-auth')
             # If two-factor authentication is not enabled, log in the user
+            session.clear()
             session['username'] = str(username)
             session.permanent = True
             flash('Login successful.', 'success')
@@ -105,7 +119,6 @@ def login():
                 flash('Your account is locked due to too many failed login attempts.', 'error')
             else:
                 flash('Invalid username or password. Please try again.', 'error')
-            flash('Invalid username or password. Please try again.', 'error')
     return render_template("login.html")
 
 @app.route("/register", methods=['GET', 'POST'])
@@ -129,8 +142,9 @@ def register():
             flash('Passwords do not match. Please try again.', 'error')
         # Check password strength
         elif password_strength.get('score') < 3:
-            flash("Password to weak:", password_strength.get('feedback').get('suggestions'), 'error')
-        # Save user details and send verification email
+            feedback = password_strength.get('feedback', {}).get('suggestions', [])
+            suggestions = " ".join(feedback) if feedback else "Please choose a stronger password."
+            flash(f"Password too weak: {suggestions}", 'error')
         else:
             # Save user details to the database
             hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
@@ -138,7 +152,8 @@ def register():
 
             # Send verification email
             verification_code = pyotp.random_base32()
-            users.update_one({'username': str(username)}, {'$set': {'verification_code': verification_code, 'verification_code_sent': datetime.datetime.now()}})
+            hashed_code = bcrypt.generate_password_hash(verification_code).decode('utf-8')
+            users.update_one({'username': str(username)}, {'$set': {'verification_code': hashed_code, 'verification_code_sent': datetime.datetime.now()}})
             verification_link = url_for('verify_email', _external=True)
             subject='Verify Your Email'
             body='To verify your email, please click the link below:\n\n' + verification_link + '\n\nAnd enter the following code:\n\n' + verification_code+ '\n\nThis link will expire in one hour. If you did not request this, please ignore this email.'
@@ -174,7 +189,9 @@ def verify_email():
             return redirect(url_for('register'))
         
         # Check if the verification code is correct
-        if verification_code == user.get('verification_code'):
+        hashed_code = user.get('verification_code')
+        is_valid = bcrypt.check_password_hash(hashed_code, verification_code)
+        if is_valid:
             users.update_one({'email': email}, {'$set': {'is_verified': True}, '$unset': {'verification_code': None, 'verification_code_sent': None}})
             flash('Email verified successfully. You can now access your account.', 'success')
             return redirect(url_for('account'))
@@ -188,9 +205,11 @@ def resend_verification_code():
     if not session.get('username'):
         return redirect("/login")
     
+    # Generate a new verification code and send email
     user = users.find_one({'username': session.get('username')})
     verification_code = pyotp.random_base32()
-    users.update_one({'username': session.get('username')}, {'$set': {'verification_code': verification_code, 'verification_code_sent': datetime.datetime.now()}})
+    hashed_code = bcrypt.generate_password_hash(verification_code).decode('utf-8')
+    users.update_one({'username': session.get('username')}, {'$set': {'verification_code': hashed_code, 'verification_code_sent': datetime.datetime.now()}})
     verification_link = url_for('verify_email', _external=True)
     
     subject='Verify Your Email'
@@ -219,7 +238,7 @@ def account():
 
 @app.route("/logout")
 def logout():
-    session["username"] = None
+    session.clear()
     return redirect("/")
 
 @app.route("/change-password", methods=['POST'])
@@ -239,7 +258,9 @@ def change_password():
             flash('Invalid old password or new passwords do not match.', 'error')
         # Check strength of new password
         elif password_strength.get('score') < 3:
-            flash("Password too weak:", password_strength.get('feedback').get('suggestions'), 'error')
+            feedback = password_strength.get('feedback', {}).get('suggestions', [])
+            suggestions = " ".join(feedback) if feedback else "Please choose a stronger password."
+            flash(f"Password too weak: {suggestions}", 'error')
         # Check if old password is the same as new password
         elif old_password == new_password:
             flash('New password cannot be the same as the old password.', 'error')
@@ -309,7 +330,9 @@ def reset_password():
             flash('Passwords do not match. Please try again.', 'error')
         # Check password strength
         elif password_strength.get('score') < 3:
-            flash("Password to weak:", password_strength.get('feedback').get('suggestions'), 'error')
+            feedback = password_strength.get('feedback', {}).get('suggestions', [])
+            suggestions = " ".join(feedback) if feedback else "Please choose a stronger password."
+            flash(f"Password too weak: {suggestions}", 'error')
         else:
             hashed_new_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
             users.update_one({'reset_token': token}, {'$set': {'password': hashed_new_password, 'last_password_change': datetime.datetime.now()}, '$unset': {'reset_token': None, 'token_expiry': None}})
@@ -331,15 +354,16 @@ def set_up_two_factor_auth():
 
         # Check if the user has two-factor authentication enabled
         if user.get('2fa_secret'):
-            secret = user.get('2fa_secret')
-            totp = pyotp.TOTP(secret)
+            decrypted_secret = cipher.decrypt(user.get('2fa_secret')).decode()
+            totp = pyotp.TOTP(decrypted_secret)
             link = totp.provisioning_uri(name=session.get('username'), issuer_name="CM3148Prototype")
             flash('Two-factor authentication is already set up. Please use the existing key.', 'info')
-            return render_template("two-factor-auth.html", link=link, key=secret)
+            return render_template("two-factor-auth.html", link=link, key=decrypted_secret)
         # If two-factor authentication is not enabled, generate a new key
         else:
             secret = pyotp.random_base32()
-            users.update_one({'username': session.get('username')}, {'$set': {'2fa_secret': secret}})
+            encrypted_secret = cipher.encrypt(secret.encode())
+            users.update_one({'username': session.get('username')}, {'$set': {'2fa_secret': encrypted_secret}})
             totp = pyotp.TOTP(secret)
             link = totp.provisioning_uri(name=session.get('username'), issuer_name="CM3148Prototype")
             return render_template("two-factor-auth.html", link=link, key=secret)
@@ -353,11 +377,12 @@ def verify_two_factor_auth():
     if request.method == 'POST':
         user = users.find_one({'username': session.get('temp_username')})
         if user:
-            totp = pyotp.TOTP(user.get('2fa_secret'))
+            decrypted_secret = cipher.decrypt(user.get('2fa_secret')).decode()
+            totp = pyotp.TOTP(decrypted_secret)
             token = request.form.get('totp')
             if totp.verify(token):
                 session['username'] = session.get('temp_username')
-                session['temp_username'] = None
+                session.pop('temp_username')
                 session.permanent = True
                 flash('Login successful.', 'success')
                 return redirect('/')
@@ -401,4 +426,4 @@ def send_email(email, subject, body):
     return "Email sent successfully."
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8080, debug=True, ssl_context='adhoc')
+    app.run(host="127.0.0.1", port=8080, ssl_context='adhoc')
