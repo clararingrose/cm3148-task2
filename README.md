@@ -2,16 +2,16 @@
 
 Login authentication system written in Python following SSDLC.
 
-The app requires [reCAPTCHA](https://developers.google.com/recaptcha/intro) v2 Checkbox keys and a [Mailtrap](https://mailtrap.io) account for email sandboxing.
-
 To run the app:
 
 1. Run `git clone https://github.com/clararingrose/cm3148-task2.git` to download the repository
 2. Run `cd cm3148-task2` to navigate to the repository
-3. Run `python3 -m venv venv` to set up the virtual environment
+3. Run `python -m venv venv` to set up the virtual environment
 4. Run `source venv/bin/activate` to start the virtual environment
-5. Run `pip3 install -r requirements.txt` to install the necessary dependencies
-6. Run `python3 app.py` to start the web app
-7. Go to [localhost:8080](http://localhost:8080) on your browser
+5. Run `pip install -r requirements.txt` to install the necessary dependencies
+6. Run `python app.py` to start the web app
+7. Go to [localhost:8080](https://localhost:8080) on your browser. The app is set to run over HTTPS but does not have certificates, so you will get a security warning - this is safe to ignore.
 
-(You may need to replace `python3` with `python` or `py`, and `pip3` with `pip` depending on your Python setup)
+The app requires a [Mailtrap](https://mailtrap.io) account for email sandboxing. Once you have created an account, go to 'Email Testing' and create a Project. Then, go to your project Inbox > Integrations and copy the SMTP username and password into .env
+
+(You may need to replace `python` with `python3` or `py`, and `pip` with `pip3` depending on your Python setup)
